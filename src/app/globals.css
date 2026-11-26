@@ -1,0 +1,343 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  /* SANDAI logo palette: gold + charcoal/black */
+  --ink: #050505;
+  --ink-soft: #141414;
+  --panel: #0b0b0b;
+  --panel-elevated: #161616;
+  --line: rgba(212, 175, 55, 0.16);
+  --muted: #9a9a9a;
+  --text: #f3f3f3;
+  --accent: #d4af37;
+  --accent-soft: rgba(212, 175, 55, 0.14);
+  --accent-strong: #f0d78c;
+  --warn: #c45c26;
+  --danger: #ff6b6b;
+  --glow: rgba(212, 175, 55, 0.22);
+  --radius: 18px;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+
+  /* Typography size tokens */
+  --text-page-title: 24px;
+  --text-section: 18px;
+  --text-card-title: 16px;
+  --text-body: 14px;
+  --text-helper: 12px;
+  --text-kpi: 28px;
+
+  --leading-tight: 1.35;
+  --leading-body: 1.5;
+  --leading-khmer: 1.7;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-panel: var(--panel);
+  --color-panel-elevated: var(--panel-elevated);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-text: var(--text);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --font-sans: "Inter", "Noto Sans Khmer", sans-serif;
+  --font-khmer: "Noto Sans Khmer", "Inter", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  /* Inter first for en/vi; Noto Sans Khmer kept as fallback for mixed content */
+  font-family: "Inter", "Noto Sans Khmer", sans-serif;
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: var(--leading-body);
+  background:
+    radial-gradient(1100px 560px at 90% -8%, rgba(212, 175, 55, 0.16), transparent 55%),
+    radial-gradient(900px 480px at -12% 18%, rgba(212, 175, 55, 0.07), transparent 50%),
+    linear-gradient(180deg, #050505 0%, #0d0d0d 45%, #111111 100%);
+  background-attachment: fixed;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Language-aware font stacks (set via <html lang="...">) */
+html[lang="km"] body {
+  font-family: "Noto Sans Khmer", "Inter", sans-serif;
+  line-height: var(--leading-khmer);
+}
+
+html[lang="en"] body,
+html[lang="vi"] body {
+  font-family: "Inter", "Noto Sans Khmer", sans-serif;
+  line-height: var(--leading-body);
+}
+
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  opacity: 0.28;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+  z-index: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(212, 175, 55, 0.35);
+  color: #fff;
+}
+
+/* Typography utility classes */
+.type-page-title {
+  font-size: var(--text-page-title);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+.type-section {
+  font-size: var(--text-section);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+}
+
+.type-card-title {
+  font-size: var(--text-card-title);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+}
+
+.type-body {
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: var(--leading-body);
+}
+
+.type-label {
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: var(--leading-body);
+}
+
+.type-helper {
+  font-size: var(--text-helper);
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.type-nav {
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: var(--leading-body);
+}
+
+.type-kpi {
+  font-size: var(--text-kpi);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+html[lang="km"] .type-page-title,
+html[lang="km"] .type-section,
+html[lang="km"] .type-card-title,
+html[lang="km"] .type-body,
+html[lang="km"] .type-label,
+html[lang="km"] .type-helper,
+html[lang="km"] .type-nav,
+html[lang="km"] .type-kpi {
+  line-height: var(--leading-khmer);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade {
+  animation: fade-in 0.4s ease both;
+}
+
+.stagger > * {
+  animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stagger > *:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 0.16s;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.stagger > *:nth-child(6) {
+  animation-delay: 0.24s;
+}
+
+.surface {
+  background: linear-gradient(180deg, rgba(28, 28, 28, 0.96), rgba(18, 18, 18, 0.96));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.field {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0f0f0f;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: var(--leading-body);
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+html[lang="km"] .field {
+  line-height: var(--leading-khmer);
+}
+
+.field:focus {
+  border-color: color-mix(in srgb, var(--accent) 70%, white);
+  box-shadow: 0 0 0 4px var(--glow);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0.7rem 1.2rem;
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+html[lang="km"] .btn {
+  line-height: var(--leading-khmer);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #f0d78c 0%, #d4af37 45%, #a88720 100%);
+  color: #111;
+  box-shadow: 0 10px 24px rgba(212, 175, 55, 0.28);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 14px 28px rgba(212, 175, 55, 0.38);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(212, 175, 55, 0.35);
+}
+
+.btn-danger {
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff8f8f;
+  border: 1px solid rgba(255, 107, 107, 0.22);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 107, 107, 0.16);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  font-size: var(--text-helper);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}

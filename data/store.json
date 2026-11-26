@@ -1,0 +1,74 @@
+{
+  "company": {
+    "name": "SANDAI",
+    "logoUrl": "/sandai-logo.png",
+    "slogan": "SMART STRATEGY STRONGER TOMORROW"
+  },
+  "departments": [
+    {
+      "id": "48393f6e-9286-47ad-be56-94900e16e736",
+      "name": "Executive",
+      "createdAt": "2026-11-25T01:33:38.689Z"
+    },
+    {
+      "id": "f4dd8261-66dd-4916-b82b-3a2e27dc709c",
+      "name": "Engineering",
+      "createdAt": "2026-11-25T01:33:38.689Z"
+    },
+    {
+      "id": "55d29759-ccb2-4e11-9fa4-c35be10f1ccf",
+      "name": "Marketing",
+      "createdAt": "2026-11-25T01:33:38.689Z"
+    },
+    {
+      "id": "c44b9665-15e9-47bd-8d51-b60dcab45c5d",
+      "name": "People & Culture",
+      "createdAt": "2026-11-25T01:33:38.689Z"
+    }
+  ],
+  "employees": [
+    {
+      "id": "f9c77ca9-85fe-460c-8bcc-c51f8e889668",
+      "name": "Bobby Tandy",
+      "bio": "Hello! Welcome to my digital namecard. Feel free to reach out anytime.",
+      "position": "Project manager",
+      "departmentId": "55d29759-ccb2-4e11-9fa4-c35be10f1ccf",
+      "email": "bobby.tandy@sandai.com",
+      "photoUrl": "",
+      "phone": "096 7777 256",
+      "telegram": "t.me/bobby.tandy",
+      "facebook": "www.facebook.com/bobby.tandy",
+      "tiktok": "www.tiktok.com/@bobby_tandy",
+      "linkedin": "www.linkedin.com/in/bobbytandy",
+      "spokenLanguages": [
+        "khmer",
+        "english",
+        "chinese"
+      ],
+      "slug": "bobby-tandy",
+      "createdAt": "2026-11-25T01:33:38.689Z",
+      "updatedAt": "2026-11-25T01:33:38.689Z"
+    },
+    {
+      "id": "e30262aa-e47e-4236-a723-498b75d57f12",
+      "name": "Ava Chen",
+      "bio": "Building the next chapter with people and process.",
+      "position": "Chief Operating Officer",
+      "departmentId": "48393f6e-9286-47ad-be56-94900e16e736",
+      "email": "ava.chen@sandai.com",
+      "photoUrl": "",
+      "phone": "+1 415 555 0142",
+      "telegram": "",
+      "facebook": "",
+      "tiktok": "",
+      "linkedin": "www.linkedin.com/in/avachen",
+      "spokenLanguages": [
+        "english",
+        "chinese"
+      ],
+      "slug": "ava-chen",
+      "createdAt": "2026-11-25T01:33:38.689Z",
+      "updatedAt": "2026-11-25T01:33:38.689Z"
+    }
+  ]
+}

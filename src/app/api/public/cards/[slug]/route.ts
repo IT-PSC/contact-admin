@@ -1,0 +1,15 @@
+import { NextRequest } from "next/server";
+import { proxyToBackend } from "@/lib/proxy";
+
+type Params = { params: Promise<{ slug: string }> };
+
+export async function GET(request: NextRequest, { params }: Params) {
+  const { slug } = await params;
+  return proxyToBackend(request, `/api/public/cards/${encodeURIComponent(slug)}`, {
+    method: "GET",
+  });
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204 });
+}
