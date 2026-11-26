@@ -30,6 +30,13 @@ async function authHeaders(): Promise<HeadersInit> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+const RETRYABLE_STATUS = new Set([502, 503, 504]);
+const MAX_RETRIES = 3;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function backendFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   const auth = await authHeaders();
@@ -37,18 +44,43 @@ async function backendFetch<T>(path: string, init?: RequestInit): Promise<T> {
     if (!headers.has(key)) headers.set(key, value);
   }
 
-  const res = await fetch(`${getBackendUrl()}${path}`, {
-    ...init,
-    headers,
-    cache: "no-store",
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    throw new Error(
-      typeof data?.error === "string" ? data.error : `Backend error (${res.status})`,
-    );
+  const url = `${getBackendUrl()}${path}`;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, {
+        ...init,
+        headers,
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (RETRYABLE_STATUS.has(res.status) && attempt < MAX_RETRIES) {
+          await sleep(1500 * (attempt + 1));
+          continue;
+        }
+        throw new Error(
+          typeof data?.error === "string"
+            ? data.error
+            : `Backend error (${res.status})`,
+        );
+      }
+      return data as T;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const isNetwork =
+        lastError.name === "TypeError" ||
+        /fetch failed|ECONNREFUSED|ETIMEDOUT|network/i.test(lastError.message);
+      if (isNetwork && attempt < MAX_RETRIES) {
+        await sleep(1500 * (attempt + 1));
+        continue;
+      }
+      throw lastError;
+    }
   }
-  return data as T;
+
+  throw lastError ?? new Error("Backend unavailable");
 }
 
 export async function getCompany(): Promise<CompanySettings> {

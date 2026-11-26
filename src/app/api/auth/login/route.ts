@@ -2,20 +2,45 @@ import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_TOKEN_COOKIE } from "@/lib/auth";
 import { getBackendUrl } from "@/lib/backend";
 
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const res = await fetch(`${getBackendUrl()}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
+    const url = `${getBackendUrl()}/api/auth/login`;
+    let res: Response | null = null;
+    let data: { error?: string; admin?: unknown; token?: string } = {};
 
-    if (!res.ok) {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      data = await res.json().catch(() => ({}));
+      if (res.ok || ![502, 503, 504].includes(res.status)) break;
+      await sleep(1500 * (attempt + 1));
+    }
+
+    if (!res || !res.ok) {
       return NextResponse.json(
-        { error: data.error || "Login failed" },
-        { status: res.status },
+        {
+          error:
+            data.error ||
+            (res && [502, 503, 504].includes(res.status)
+              ? "Backend unavailable. Wait for the API to wake, then try again."
+              : "Login failed"),
+        },
+        { status: res?.status && res.status >= 400 ? res.status : 502 },
+      );
+    }
+
+    if (!data.token) {
+      return NextResponse.json(
+        { error: "Login response missing token" },
+        { status: 502 },
       );
     }
 
