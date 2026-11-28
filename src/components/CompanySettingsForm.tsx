@@ -4,9 +4,11 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CompanySettings } from "@/lib/types";
 import { ImageUpload } from "./ImageUpload";
+import { useLocale } from "./LocaleProvider";
 
 export function CompanySettingsForm({ company }: { company: CompanySettings }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [name, setName] = useState(company.name);
   const [slogan, setSlogan] = useState(company.slogan);
   const [logoUrl, setLogoUrl] = useState(company.logoUrl);
@@ -25,10 +27,10 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
       body.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      if (!res.ok) throw new Error(data.error || t.common.uploadFailed);
       setLogoUrl(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t.common.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -46,11 +48,11 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
         body: JSON.stringify({ name, slogan, logoUrl }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      if (!res.ok) throw new Error(data.error || t.common.saveFailed);
       setSaved(true);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t.common.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -60,16 +62,12 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
     <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="surface animate-rise space-y-5 p-6 md:p-8">
         <div>
-          <h2 className="type-section">
-            Brand for namecards
-          </h2>
-          <p className="type-helper mt-1 text-[var(--muted)]">
-            Company logo, name, and slogan appear on every employee namecard.
-          </p>
+          <h2 className="type-section">{t.company.brandTitle}</h2>
+          <p className="type-helper mt-1 text-[var(--muted)]">{t.company.brandHint}</p>
         </div>
 
         <label className="block space-y-2">
-          <span className="type-label text-[var(--muted)]">Company name</span>
+          <span className="type-label text-[var(--muted)]">{t.company.companyName}</span>
           <input
             className="field"
             value={name}
@@ -83,7 +81,7 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
         </label>
 
         <label className="block space-y-2">
-          <span className="type-label text-[var(--muted)]">Slogan</span>
+          <span className="type-label text-[var(--muted)]">{t.company.slogan}</span>
           <input
             className="field"
             value={slogan}
@@ -96,8 +94,8 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
         </label>
 
         <ImageUpload
-          label="Company logo"
-          hint="Shown at the top of each namecard."
+          label={t.company.logo}
+          hint={t.company.logoHint}
           value={logoUrl}
           uploading={uploading}
           onUpload={onUpload}
@@ -112,18 +110,18 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
         ) : null}
         {saved ? (
           <p className="type-body rounded-xl bg-[var(--accent-soft)] px-4 py-3 text-[var(--accent-strong)]">
-            Company settings saved.
+            {t.company.saved}
           </p>
         ) : null}
 
         <button className="btn btn-primary" type="submit" disabled={saving}>
-          {saving ? "Saving..." : "Save company settings"}
+          {saving ? t.common.saving : t.company.saveButton}
         </button>
       </div>
 
       <aside className="surface animate-rise p-6" style={{ animationDelay: "0.08s" }}>
         <p className="type-helper font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-          Preview
+          {t.company.preview}
         </p>
         <div className="mt-6 flex flex-col items-center text-center">
           {logoUrl ? (
@@ -135,10 +133,10 @@ export function CompanySettingsForm({ company }: { company: CompanySettings }) {
             </div>
           )}
           <p className="type-page-title mt-3 tracking-[0.06em] text-[#f0d78c]">
-            {name.trim() || "Company"}
+            {name.trim() || t.company.companyFallback}
           </p>
           <p className="type-helper mt-4 max-w-xs font-medium uppercase tracking-[0.08em] text-[var(--muted)]">
-            {slogan.trim() || "Your slogan here"}
+            {slogan.trim() || t.company.sloganFallback}
           </p>
         </div>
       </aside>

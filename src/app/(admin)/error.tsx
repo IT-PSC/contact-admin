@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useLocale } from "@/components/LocaleProvider";
 
 export default function AdminError({
   error,
@@ -9,6 +10,8 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useLocale();
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -22,15 +25,15 @@ export default function AdminError({
         SANDAI
       </p>
       <h1 className="mt-3 text-2xl font-bold text-white">
-        {isBackend ? "Backend unavailable" : "Something went wrong"}
+        {isBackend ? t.error.backendTitle : t.error.genericTitle}
       </h1>
       <p className="mt-3 text-sm text-white/60">
         {isBackend
-          ? "The API did not respond (often a sleeping or crashed Render free-tier service). Open the backend URL /api/health, wait for it to wake, then try again."
-          : error.message || "An unexpected error occurred."}
+          ? t.error.backendDesc
+          : error.message || t.error.unexpected}
       </p>
       <button type="button" className="btn btn-primary mt-8" onClick={reset}>
-        Try again
+        {t.common.tryAgain}
       </button>
     </div>
   );

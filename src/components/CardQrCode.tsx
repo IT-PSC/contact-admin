@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { digitalCardUrl } from "@/lib/client-api";
+import { useLocale } from "./LocaleProvider";
 
 type Props = {
   slug: string;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function CardQrCode({ slug, name, size = 180, showActions = true }: Props) {
+  const { t, format } = useLocale();
   const url = digitalCardUrl(slug);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
@@ -31,7 +33,7 @@ export function CardQrCode({ slug, name, size = 180, showActions = true }: Props
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
-      window.prompt("Copy card link:", url);
+      window.prompt(t.common.copyThisCardLink, url);
     }
   }
 
@@ -51,8 +53,7 @@ export function CardQrCode({ slug, name, size = 180, showActions = true }: Props
         />
       </div>
       <p className="max-w-[220px] text-center text-[12px] text-[var(--muted)]">
-        Scan to open <span className="font-medium text-[var(--text)]">{name}</span>
-        ’s digital namecard
+        {format(t.qr.scanToOpen, { name })}
       </p>
       <p className="max-w-[240px] truncate text-center text-[11px] text-[#D4AF37]/80">
         {url}
@@ -60,10 +61,10 @@ export function CardQrCode({ slug, name, size = 180, showActions = true }: Props
       {showActions ? (
         <div className="flex flex-wrap justify-center gap-2">
           <button type="button" className="btn btn-primary" onClick={downloadPng}>
-            Download QR
+            {t.qr.downloadQr}
           </button>
           <button type="button" className="btn btn-ghost" onClick={copyLink}>
-            {copied ? "Copied!" : "Copy link"}
+            {copied ? t.common.copied : t.common.copyLink}
           </button>
         </div>
       ) : null}
@@ -79,6 +80,7 @@ type ModalProps = {
 };
 
 export function CardQrModal({ slug, name, open, onClose }: ModalProps) {
+  const { t, format } = useLocale();
   if (!open) return null;
 
   return (
@@ -86,7 +88,7 @@ export function CardQrModal({ slug, name, open, onClose }: ModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label={`QR code for ${name}`}
+      aria-label={format(t.qr.qrFor, { name })}
       onClick={onClose}
     >
       <div
@@ -96,12 +98,12 @@ export function CardQrModal({ slug, name, open, onClose }: ModalProps) {
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.16em] text-[#D4AF37]">
-              QR CODE
+              {t.qr.qrCode}
             </p>
             <h3 className="mt-1 text-lg font-bold text-white">{name}</h3>
           </div>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Close
+            {t.common.close}
           </button>
         </div>
         <CardQrCode slug={slug} name={name} size={200} />

@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Department } from "@/lib/types";
 import { EmptyState } from "./EmptyState";
+import { useLocale } from "./LocaleProvider";
 
 export function DepartmentManager({
   departments,
@@ -13,6 +14,7 @@ export function DepartmentManager({
   employeeCounts: Record<string, number>;
 }) {
   const router = useRouter();
+  const { t, format } = useLocale();
   const [name, setName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -30,11 +32,11 @@ export function DepartmentManager({
         body: JSON.stringify({ name }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create");
+      if (!res.ok) throw new Error(data.error || t.departments.createFailed);
       setName("");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create");
+      setError(err instanceof Error ? err.message : t.departments.createFailed);
     } finally {
       setBusy(false);
     }
@@ -50,27 +52,27 @@ export function DepartmentManager({
         body: JSON.stringify({ name: editingName }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update");
+      if (!res.ok) throw new Error(data.error || t.departments.updateFailed);
       setEditingId(null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update");
+      setError(err instanceof Error ? err.message : t.departments.updateFailed);
     } finally {
       setBusy(false);
     }
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this department?")) return;
+    if (!confirm(t.departments.deleteConfirm)) return;
     setBusy(true);
     setError("");
     try {
       const res = await fetch(`/api/departments/${id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to delete");
+      if (!res.ok) throw new Error(data.error || t.departments.deleteFailed);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
+      setError(err instanceof Error ? err.message : t.departments.deleteFailed);
     } finally {
       setBusy(false);
     }
@@ -80,15 +82,11 @@ export function DepartmentManager({
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.2fr]">
       <form onSubmit={createDepartment} className="surface animate-rise h-fit space-y-4 p-6">
         <div>
-          <h2 className="type-section">
-            Add department
-          </h2>
-          <p className="type-helper mt-1 text-[var(--muted)]">
-            Keep departments short and clear so employee forms stay easy to scan.
-          </p>
+          <h2 className="type-section">{t.departments.addTitle}</h2>
+          <p className="type-helper mt-1 text-[var(--muted)]">{t.departments.addHint}</p>
         </div>
         <label className="block space-y-2">
-          <span className="type-label text-[var(--muted)]">Department name</span>
+          <span className="type-label text-[var(--muted)]">{t.departments.nameLabel}</span>
           <input
             className="field"
             value={name}
@@ -101,15 +99,15 @@ export function DepartmentManager({
           <p className="type-body rounded-xl bg-[#fff5f4] px-4 py-3 text-[var(--danger)]">{error}</p>
         ) : null}
         <button className="btn btn-primary" type="submit" disabled={busy}>
-          {busy ? "Saving..." : "Add department"}
+          {busy ? t.common.saving : t.departments.addButton}
         </button>
       </form>
 
       <div className="space-y-3">
         {departments.length === 0 ? (
           <EmptyState
-            title="No departments yet"
-            description="Create departments first, then assign them when adding employees."
+            title={t.departments.noDepartments}
+            description={t.departments.noDepartmentsDesc}
           />
         ) : (
           <div className="stagger space-y-3">
@@ -117,7 +115,10 @@ export function DepartmentManager({
               const count = employeeCounts[department.id] ?? 0;
               const isEditing = editingId === department.id;
               return (
-                <article key={department.id} className="surface flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <article
+                  key={department.id}
+                  className="surface flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div className="min-w-0 flex-1">
                     {isEditing ? (
                       <input
@@ -128,11 +129,11 @@ export function DepartmentManager({
                       />
                     ) : (
                       <>
-                        <h3 className="type-card-title">
-                          {department.name}
-                        </h3>
+                        <h3 className="type-card-title">{department.name}</h3>
                         <p className="type-helper mt-1 text-[var(--muted)]">
-                          {count} {count === 1 ? "employee" : "employees"}
+                          {count === 1
+                            ? t.departments.employeeOne
+                            : format(t.departments.employeeMany, { count })}
                         </p>
                       </>
                     )}
@@ -146,14 +147,14 @@ export function DepartmentManager({
                           disabled={busy}
                           onClick={() => saveEdit(department.id)}
                         >
-                          Save
+                          {t.common.save}
                         </button>
                         <button
                           type="button"
                           className="btn btn-ghost"
                           onClick={() => setEditingId(null)}
                         >
-                          Cancel
+                          {t.common.cancel}
                         </button>
                       </>
                     ) : (
@@ -166,7 +167,7 @@ export function DepartmentManager({
                             setEditingName(department.name);
                           }}
                         >
-                          Rename
+                          {t.departments.rename}
                         </button>
                         <button
                           type="button"
@@ -174,7 +175,7 @@ export function DepartmentManager({
                           disabled={busy}
                           onClick={() => remove(department.id)}
                         >
-                          Delete
+                          {t.common.delete}
                         </button>
                       </>
                     )}

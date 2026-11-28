@@ -251,13 +251,39 @@ html[lang="km"] .type-kpi {
     box-shadow 0.2s ease;
 }
 
+/* Leave room for a leading icon so text doesn't sit under it */
+.field.field-with-icon {
+  padding-left: 2.85rem;
+}
+
+/* Native select: center text + arrow, avoid double-border focus look */
+select.field {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0f0f0f;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%23f3f3f3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 16px 16px;
+  padding: 0.75rem 2.75rem 0.75rem 1rem;
+  line-height: 1.25;
+  min-height: 46px;
+}
+
 html[lang="km"] .field {
   line-height: var(--leading-khmer);
 }
 
 .field:focus {
   border-color: color-mix(in srgb, var(--accent) 70%, white);
-  box-shadow: 0 0 0 4px var(--glow);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+
+select.field:focus {
+  /* Single clean focus ring — no stacked double border */
+  border-color: color-mix(in srgb, var(--accent) 70%, white);
+  box-shadow: 0 0 0 3px var(--glow);
+  outline: none;
 }
 
 .btn {

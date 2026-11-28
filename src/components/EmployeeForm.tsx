@@ -3,14 +3,29 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import {
+  CONTACT_TYPE_OPTIONS,
+  contactsFromEmployee,
+  emptyContact,
+  legacyFieldsFromContacts,
+  sanitizeContacts,
+} from "@/lib/contacts";
+import {
   DEFAULT_LANGUAGE_OPTIONS,
   languagesToOptions,
   slugifyLanguage,
   spokenLanguageLabel,
 } from "@/lib/languages";
-import type { Department, Employee, Language, SpokenLanguage } from "@/lib/types";
+import type {
+  ContactLink,
+  ContactType,
+  Department,
+  Employee,
+  Language,
+  SpokenLanguage,
+} from "@/lib/types";
 import { Avatar } from "./Avatar";
 import { ImageUpload } from "./ImageUpload";
+import { useLocale } from "./LocaleProvider";
 
 type Props = {
   departments: Department[];
@@ -20,6 +35,7 @@ type Props = {
 
 export function EmployeeForm({ departments, languages = [], employee }: Props) {
   const router = useRouter();
+  const { t, format } = useLocale();
   const [name, setName] = useState(employee?.name ?? "");
   const [bio, setBio] = useState(employee?.bio ?? "");
   const [position, setPosition] = useState(employee?.position ?? "");
@@ -28,11 +44,9 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
   );
   const [email, setEmail] = useState(employee?.email ?? "");
   const [photoUrl, setPhotoUrl] = useState(employee?.photoUrl ?? "");
-  const [phone, setPhone] = useState(employee?.phone ?? "");
-  const [telegram, setTelegram] = useState(employee?.telegram ?? "");
-  const [facebook, setFacebook] = useState(employee?.facebook ?? "");
-  const [tiktok, setTiktok] = useState(employee?.tiktok ?? "");
-  const [linkedin, setLinkedin] = useState(employee?.linkedin ?? "");
+  const [contacts, setContacts] = useState<ContactLink[]>(() =>
+    contactsFromEmployee(employee),
+  );
   const [spokenLanguages, setSpokenLanguages] = useState<SpokenLanguage[]>(
     employee?.spokenLanguages ?? [],
   );
@@ -46,9 +60,12 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const previewName = useMemo(() => name.trim() || "New employee", [name]);
+  const previewName = useMemo(
+    () => name.trim() || t.employeeForm.newEmployee,
+    [name, t.employeeForm.newEmployee],
+  );
   const departmentName =
-    departments.find((d) => d.id === departmentId)?.name || "Department";
+    departments.find((d) => d.id === departmentId)?.name || t.employeeForm.department;
 
   function toggleLanguage(code: SpokenLanguage) {
     setSpokenLanguages((prev) =>
@@ -82,7 +99,7 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
         body: JSON.stringify({ name: label }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to add language");
+      if (!res.ok) throw new Error(data.error || t.employeeForm.addLanguageFailed);
 
       const option = { value: data.slug as string, label: data.name as string };
       setLanguageOptions((prev) =>
@@ -93,7 +110,9 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
       );
       setNewLanguage("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add language");
+      setError(
+        err instanceof Error ? err.message : t.employeeForm.addLanguageFailed,
+      );
     } finally {
       setAddingLanguage(false);
     }
@@ -108,13 +127,45 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
       body.append("file", file);
       const res = await fetch("/api/upload", { method: "POST", body });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      if (!res.ok) throw new Error(data.error || t.common.uploadFailed);
       setPhotoUrl(data.url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : t.common.uploadFailed);
     } finally {
       setUploading(false);
     }
+  }
+
+  function updateContact(id: string, patch: Partial<ContactLink>) {
+    setContacts((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
+  }
+
+  function addContact() {
+    setContacts((prev) => [...prev, emptyContact("website")]);
+  }
+
+  function removeContact(id: string) {
+    setContacts((prev) => {
+      const next = prev.filter((item) => item.id !== id);
+      return next.length > 0 ? next : [emptyContact("phone")];
+    });
+  }
+
+  function typeLabel(type: ContactType) {
+    const map: Record<ContactType, string> = {
+      phone: t.employeeForm.phone,
+      telegram: t.employeeForm.telegram,
+      facebook: t.employeeForm.facebook,
+      tiktok: t.employeeForm.tiktok,
+      linkedin: t.employeeForm.linkedin,
+      whatsapp: t.employeeForm.whatsapp,
+      instagram: t.employeeForm.instagram,
+      website: t.employeeForm.website,
+      custom: t.employeeForm.custom,
+    };
+    return map[type];
   }
 
   async function onSubmit(event: FormEvent) {
@@ -122,6 +173,8 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
     setSaving(true);
     setError("");
     try {
+      const cleaned = sanitizeContacts(contacts);
+      const legacy = legacyFieldsFromContacts(cleaned);
       const payload = {
         name,
         bio,
@@ -129,11 +182,8 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
         departmentId,
         email,
         photoUrl,
-        phone,
-        telegram,
-        facebook,
-        tiktok,
-        linkedin,
+        ...legacy,
+        contacts: cleaned,
         spokenLanguages,
       };
       const res = await fetch(
@@ -145,11 +195,11 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
         },
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      if (!res.ok) throw new Error(data.error || t.common.saveFailed);
       router.push("/employees");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
+      setError(err instanceof Error ? err.message : t.common.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -160,15 +210,17 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
       <div className="space-y-5">
         <section className="surface animate-rise space-y-5 p-6 md:p-8">
           <div>
-            <h2 className="type-section">Profile</h2>
+            <h2 className="type-section">{t.employeeForm.profile}</h2>
             <p className="type-helper mt-1 text-[var(--muted)]">
-              These fields appear on the public digital namecard.
+              {t.employeeForm.profileHint}
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block space-y-2 md:col-span-2">
-              <span className="type-label text-[var(--muted)]">Full name</span>
+              <span className="type-label text-[var(--muted)]">
+                {t.employeeForm.fullName}
+              </span>
               <input
                 className="field"
                 value={name}
@@ -179,28 +231,32 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="type-label text-[var(--muted)]">Bio / introduction</span>
+              <span className="type-label text-[var(--muted)]">{t.employeeForm.bio}</span>
               <textarea
                 className="field min-h-[110px] resize-y"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Short intro under the greeting"
+                placeholder={t.employeeForm.bioPlaceholder}
               />
             </label>
 
             <label className="block space-y-2">
-              <span className="type-label text-[var(--muted)]">Position</span>
+              <span className="type-label text-[var(--muted)]">
+                {t.employeeForm.position}
+              </span>
               <input
                 className="field"
                 value={position}
                 onChange={(e) => setPosition(e.target.value)}
-                placeholder="Project manager"
+                placeholder={t.employeeForm.positionPlaceholder}
                 required
               />
             </label>
 
             <label className="block space-y-2">
-              <span className="type-label text-[var(--muted)]">Department</span>
+              <span className="type-label text-[var(--muted)]">
+                {t.employeeForm.department}
+              </span>
               <select
                 className="field"
                 value={departmentId}
@@ -208,7 +264,7 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
                 required
               >
                 {departments.length === 0 ? (
-                  <option value="">Add a department first</option>
+                  <option value="">{t.employeeForm.addDeptFirst}</option>
                 ) : (
                   departments.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -220,7 +276,9 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="type-label text-[var(--muted)]">Work email</span>
+              <span className="type-label text-[var(--muted)]">
+                {t.employeeForm.workEmail}
+              </span>
               <input
                 className="field"
                 type="email"
@@ -233,11 +291,14 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
           </div>
         </section>
 
-        <section className="surface animate-rise space-y-4 p-6 md:p-8" style={{ animationDelay: "0.04s" }}>
+        <section
+          className="surface animate-rise space-y-4 p-6 md:p-8"
+          style={{ animationDelay: "0.04s" }}
+        >
           <div>
-            <h2 className="type-section">Languages known</h2>
+            <h2 className="type-section">{t.employeeForm.languagesKnown}</h2>
             <p className="type-helper mt-1 text-[var(--muted)]">
-              Select languages this employee can speak, or add a new one.
+              {t.employeeForm.languagesHint}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -264,7 +325,7 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
               className="field sm:max-w-xs"
               value={newLanguage}
               onChange={(e) => setNewLanguage(e.target.value)}
-              placeholder="Add new language (e.g. Spanish)"
+              placeholder={t.employeeForm.addLanguagePlaceholder}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -278,65 +339,108 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
               disabled={addingLanguage || !newLanguage.trim()}
               onClick={() => void onAddLanguage()}
             >
-              {addingLanguage ? "Adding..." : "Add language"}
+              {addingLanguage
+                ? t.employeeForm.addingLanguage
+                : t.employeeForm.addLanguage}
             </button>
           </div>
         </section>
 
-        <section className="surface animate-rise space-y-5 p-6 md:p-8" style={{ animationDelay: "0.08s" }}>
-          <div>
-            <h2 className="type-section">Personal contact</h2>
-            <p className="type-helper mt-1 text-[var(--muted)]">
-              Phone and social links shown in the namecard contact section.
-            </p>
+        <section
+          className="surface animate-rise space-y-5 p-6 md:p-8"
+          style={{ animationDelay: "0.08s" }}
+        >
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="type-section">{t.employeeForm.personalContact}</h2>
+              <p className="type-helper mt-1 text-[var(--muted)]">
+                {t.employeeForm.personalContactHint}
+              </p>
+            </div>
+            <button type="button" className="btn btn-ghost" onClick={addContact}>
+              {t.employeeForm.addMoreContact}
+            </button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block space-y-2">
-              <span className="type-label text-[var(--muted)]">Phone</span>
-              <input
-                className="field"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="096 7777 256"
-              />
-            </label>
-            <label className="block space-y-2">
-              <span className="type-label text-[var(--muted)]">Telegram</span>
-              <input
-                className="field"
-                value={telegram}
-                onChange={(e) => setTelegram(e.target.value)}
-                placeholder="t.me/username"
-              />
-            </label>
-            <label className="block space-y-2">
-              <span className="type-label text-[var(--muted)]">Facebook</span>
-              <input
-                className="field"
-                value={facebook}
-                onChange={(e) => setFacebook(e.target.value)}
-                placeholder="www.facebook.com/username"
-              />
-            </label>
-            <label className="block space-y-2">
-              <span className="type-label text-[var(--muted)]">TikTok</span>
-              <input
-                className="field"
-                value={tiktok}
-                onChange={(e) => setTiktok(e.target.value)}
-                placeholder="www.tiktok.com/@username"
-              />
-            </label>
-            <label className="block space-y-2 md:col-span-2">
-              <span className="type-label text-[var(--muted)]">LinkedIn</span>
-              <input
-                className="field"
-                value={linkedin}
-                onChange={(e) => setLinkedin(e.target.value)}
-                placeholder="www.linkedin.com/in/username"
-              />
-            </label>
+          <div className="space-y-3">
+            {contacts.map((contact) => (
+              <div
+                key={contact.id}
+                className="grid gap-3 rounded-2xl border border-[rgba(212,175,55,0.14)] bg-black/20 p-4 md:grid-cols-[180px_1fr_auto]"
+              >
+                <label className="block space-y-2">
+                  <span className="type-label text-[var(--muted)]">
+                    {t.employeeForm.contactType}
+                  </span>
+                  <select
+                    className="field"
+                    value={contact.type}
+                    onChange={(e) =>
+                      updateContact(contact.id, {
+                        type: e.target.value as ContactType,
+                      })
+                    }
+                  >
+                    {CONTACT_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {typeLabel(option.value)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {contact.type === "custom" ? (
+                    <label className="block space-y-2">
+                      <span className="type-label text-[var(--muted)]">
+                        {t.employeeForm.customLabel}
+                      </span>
+                      <input
+                        className="field"
+                        value={contact.label}
+                        onChange={(e) =>
+                          updateContact(contact.id, { label: e.target.value })
+                        }
+                        placeholder="Line / WeChat"
+                      />
+                    </label>
+                  ) : null}
+                  <label
+                    className={`block space-y-2 ${
+                      contact.type === "custom" ? "" : "sm:col-span-2"
+                    }`}
+                  >
+                    <span className="type-label text-[var(--muted)]">
+                      {t.employeeForm.contactValue}
+                    </span>
+                    <input
+                      className="field"
+                      value={contact.value}
+                      onChange={(e) =>
+                        updateContact(contact.id, { value: e.target.value })
+                      }
+                      placeholder={
+                        contact.type === "phone" || contact.type === "whatsapp"
+                          ? "096 7777 256"
+                          : contact.type === "telegram"
+                            ? "t.me/username"
+                            : "https://..."
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    className="btn btn-danger w-full md:w-auto"
+                    onClick={() => removeContact(contact.id)}
+                  >
+                    {t.employeeForm.removeContact}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -348,14 +452,18 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
 
         <div className="flex flex-wrap gap-3">
           <button className="btn btn-primary" type="submit" disabled={saving || !departmentId}>
-            {saving ? "Saving..." : employee ? "Update employee" : "Create employee"}
+            {saving
+              ? t.common.saving
+              : employee
+                ? t.employeeForm.updateEmployee
+                : t.employeeForm.createEmployee}
           </button>
           <button
             className="btn btn-ghost"
             type="button"
             onClick={() => router.push("/employees")}
           >
-            Cancel
+            {t.common.cancel}
           </button>
         </div>
       </div>
@@ -363,20 +471,25 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
       <aside className="animate-rise space-y-4 self-start" style={{ animationDelay: "0.08s" }}>
         <div className="surface overflow-hidden p-6">
           <p className="type-helper font-medium uppercase tracking-[0.18em] text-[var(--muted)]">
-            Namecard preview
+            {t.employeeForm.preview}
           </p>
           <div className="mt-5 flex flex-col items-center text-center">
             <Avatar name={previewName} logoUrl={photoUrl} size="lg" />
-            <h2 className="type-page-title mt-4">HELLO! I&apos;m {previewName}.</h2>
+            <h2 className="type-page-title mt-4">
+              {format(t.employeeForm.helloIm, { name: previewName })}
+            </h2>
             <p className="type-body mt-2 text-[var(--muted)]">
-              {bio.trim() || "Bio / introduction appears here"}
+              {bio.trim() || t.employeeForm.bioPlaceholderPreview}
             </p>
             <div className="type-body mt-4 w-full space-y-2 text-left">
               {[
-                ["NAME", previewName],
-                ["POSITION", position.trim() || "Position"],
-                ["DEPARTMENT", departmentName],
-                ["EMAIL", email.trim() || "email@company.com"],
+                [t.employeeForm.labelName, previewName],
+                [
+                  t.employeeForm.labelPosition,
+                  position.trim() || t.employeeForm.position,
+                ],
+                [t.employeeForm.labelDepartment, departmentName],
+                [t.employeeForm.labelEmail, email.trim() || "email@company.com"],
               ].map(([label, value]) => (
                 <div
                   key={label}
@@ -391,7 +504,9 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
             </div>
             <div className="mt-4 flex w-full flex-wrap gap-2">
               {spokenLanguages.length === 0 ? (
-                <p className="type-helper text-[var(--muted)]">Languages known appear here</p>
+                <p className="type-helper text-[var(--muted)]">
+                  {t.employeeForm.languagesAppearHere}
+                </p>
               ) : (
                 spokenLanguages.map((code) => (
                   <span key={code} className="badge">
@@ -413,8 +528,8 @@ export function EmployeeForm({ departments, languages = [], employee }: Props) {
 
         <div className="surface p-6">
           <ImageUpload
-            label="Profile photo"
-            hint="Circular portrait on the namecard. PNG/JPG up to 2MB."
+            label={t.employeeForm.profilePhoto}
+            hint={t.employeeForm.profilePhotoHint}
             value={photoUrl}
             uploading={uploading}
             onUpload={onUpload}

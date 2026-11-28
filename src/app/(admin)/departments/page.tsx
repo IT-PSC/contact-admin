@@ -1,5 +1,4 @@
-import { DepartmentManager } from "@/components/DepartmentManager";
-import { PageHeader } from "@/components/PageHeader";
+import { DepartmentsPageClient } from "@/components/DepartmentsPageClient";
 import { listDepartments, listEmployees } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
@@ -16,13 +15,9 @@ export default async function DepartmentsPage() {
   }, {});
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Organization"
-        title="Departments"
-        description="Define the teams people belong to. These show up in employee forms and filters."
-      />
-      <DepartmentManager departments={departments} employeeCounts={employeeCounts} />
-    </div>
+    <DepartmentsPageClient
+      departments={departments}
+      employeeCounts={employeeCounts}
+    />
   );
 }

@@ -2,9 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useLocale } from "./LocaleProvider";
 
 export function LogoutButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [loading, setLoading] = useState(false);
 
   async function onLogout() {
@@ -29,7 +31,7 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
           : "mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-left text-[13px] font-medium text-white/70 transition hover:border-[#D4AF37]/40 hover:text-[#F0D78C]"
       }
     >
-      {loading ? "Signing out..." : "Sign out"}
+      {loading ? t.shell.signingOut : t.shell.signOut}
     </button>
   );
 }

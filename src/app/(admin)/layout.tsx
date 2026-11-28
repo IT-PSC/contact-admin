@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/AdminShell";
+import { getCurrentAdmin } from "@/lib/backend";
 
 export const metadata: Metadata = {
   title: "SANDAI — Contact Admin",
   description: "SANDAI admin portal for employee digital namecards",
 };
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <AdminShell>{children}</AdminShell>;
+  const admin = await getCurrentAdmin();
+  return <AdminShell admin={admin}>{children}</AdminShell>;
 }

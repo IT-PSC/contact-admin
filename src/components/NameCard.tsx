@@ -1,9 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  contactDisplayLabel,
+  contactHref,
+  resolveEmployeeContacts,
+} from "@/lib/contacts";
 import { spokenLanguageLabel } from "@/lib/languages";
 import type { CompanySettings, Employee } from "@/lib/types";
-import { ensureExternalHref } from "@/lib/vcard";
 
 type Lang = "km" | "en" | "zh";
 
@@ -133,39 +137,11 @@ export function NameCard({ employee, company, departmentName }: Props) {
 
   const contacts = useMemo(
     () =>
-      [
-        employee.phone
-          ? { type: "phone", label: employee.phone, href: ensureExternalHref(employee.phone, "phone") }
-          : null,
-        employee.telegram
-          ? {
-              type: "telegram",
-              label: employee.telegram,
-              href: ensureExternalHref(employee.telegram, "url"),
-            }
-          : null,
-        employee.facebook
-          ? {
-              type: "facebook",
-              label: employee.facebook,
-              href: ensureExternalHref(employee.facebook, "url"),
-            }
-          : null,
-        employee.tiktok
-          ? {
-              type: "tiktok",
-              label: employee.tiktok,
-              href: ensureExternalHref(employee.tiktok, "url"),
-            }
-          : null,
-        employee.linkedin
-          ? {
-              type: "linkedin",
-              label: employee.linkedin,
-              href: ensureExternalHref(employee.linkedin, "url"),
-            }
-          : null,
-      ].filter(Boolean) as { type: string; label: string; href: string }[],
+      resolveEmployeeContacts(employee).map((item) => ({
+        type: item.type,
+        label: contactDisplayLabel(item),
+        href: contactHref(item),
+      })),
     [employee],
   );
 

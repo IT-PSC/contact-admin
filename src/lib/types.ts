@@ -20,6 +20,24 @@ export type Language = {
   createdAt: string;
 };
 
+export type ContactType =
+  | "phone"
+  | "telegram"
+  | "facebook"
+  | "tiktok"
+  | "linkedin"
+  | "whatsapp"
+  | "instagram"
+  | "website"
+  | "custom";
+
+export type ContactLink = {
+  id: string;
+  type: ContactType;
+  value: string;
+  label: string;
+};
+
 export type Employee = {
   id: string;
   name: string;
@@ -33,6 +51,7 @@ export type Employee = {
   facebook: string;
   tiktok: string;
   linkedin: string;
+  contacts?: ContactLink[];
   spokenLanguages: SpokenLanguage[];
   slug: string;
   createdAt: string;
@@ -53,11 +72,12 @@ export type EmployeeInput = {
   departmentId: string;
   email: string;
   photoUrl?: string;
-  phone: string;
-  telegram: string;
-  facebook: string;
-  tiktok: string;
-  linkedin: string;
+  phone?: string;
+  telegram?: string;
+  facebook?: string;
+  tiktok?: string;
+  linkedin?: string;
+  contacts?: ContactLink[];
   spokenLanguages: SpokenLanguage[];
 };
 

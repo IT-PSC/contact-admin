@@ -1,6 +1,11 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import {
+  contactsFromEmployee,
+  legacyFieldsFromContacts,
+  sanitizeContacts,
+} from "./contacts";
 import { normalizeSpokenLanguages } from "./languages";
 import { uniqueSlug } from "./slug";
 import type {
@@ -26,7 +31,7 @@ function normalizeEmployee(raw: Record<string, unknown>, fallbackDeptId = ""): E
   const now = new Date().toISOString();
   const bio = String(raw.bio ?? raw.bioEn ?? raw.subtitle ?? "").trim();
   const position = String(raw.position ?? raw.positionEn ?? "").trim();
-  return {
+  const base = {
     id: String(raw.id ?? randomUUID()),
     name,
     bio,
@@ -39,11 +44,17 @@ function normalizeEmployee(raw: Record<string, unknown>, fallbackDeptId = ""): E
     facebook: String(raw.facebook ?? "").trim(),
     tiktok: String(raw.tiktok ?? "").trim(),
     linkedin: String(raw.linkedin ?? "").trim(),
+    contacts: Array.isArray(raw.contacts)
+      ? sanitizeContacts(raw.contacts as NonNullable<Employee["contacts"]>)
+      : [],
     spokenLanguages: normalizeSpokenLanguages(raw.spokenLanguages),
     slug: String(raw.slug ?? "").trim() || uniqueSlug(name || "employee", []),
     createdAt: String(raw.createdAt ?? now),
     updatedAt: String(raw.updatedAt ?? now),
   };
+  const contacts = contactsFromEmployee(base).filter((item) => item.value);
+  const legacy = legacyFieldsFromContacts(contacts);
+  return { ...base, ...legacy, contacts };
 }
 
 function normalizeStore(raw: Record<string, unknown>): StoreData {
@@ -259,6 +270,30 @@ function buildEmployeeFields(input: EmployeeInput, store: StoreData, current?: E
     current?.id,
   );
 
+  const fromInput = sanitizeContacts(input.contacts ?? []);
+  const contacts =
+    fromInput.length > 0
+      ? fromInput
+      : contactsFromEmployee({
+          id: current?.id ?? "",
+          name: input.name,
+          bio: input.bio,
+          position: input.position,
+          departmentId: input.departmentId,
+          email: input.email,
+          photoUrl: input.photoUrl ?? "",
+          phone: input.phone ?? current?.phone ?? "",
+          telegram: input.telegram ?? current?.telegram ?? "",
+          facebook: input.facebook ?? current?.facebook ?? "",
+          tiktok: input.tiktok ?? current?.tiktok ?? "",
+          linkedin: input.linkedin ?? current?.linkedin ?? "",
+          spokenLanguages: [],
+          slug: "",
+          createdAt: "",
+          updatedAt: "",
+        }).filter((item) => item.value);
+  const legacy = legacyFieldsFromContacts(contacts);
+
   return {
     name: input.name.trim(),
     bio: input.bio.trim(),
@@ -266,11 +301,8 @@ function buildEmployeeFields(input: EmployeeInput, store: StoreData, current?: E
     departmentId: input.departmentId,
     email: input.email.trim(),
     photoUrl: input.photoUrl?.trim() ?? current?.photoUrl ?? "",
-    phone: input.phone.trim(),
-    telegram: input.telegram.trim(),
-    facebook: input.facebook.trim(),
-    tiktok: input.tiktok.trim(),
-    linkedin: input.linkedin.trim(),
+    ...legacy,
+    contacts,
     spokenLanguages: normalizeSpokenLanguages(input.spokenLanguages),
     slug,
   };

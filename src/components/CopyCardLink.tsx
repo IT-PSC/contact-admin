@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { cardUrl } from "@/lib/client-api";
+import { useLocale } from "./LocaleProvider";
 
 export function CopyCardLink({ slug }: { slug: string }) {
+  const { t } = useLocale();
   const [copied, setCopied] = useState(false);
 
   async function onCopy() {
@@ -13,13 +15,13 @@ export function CopyCardLink({ slug }: { slug: string }) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      window.prompt("Copy this card link:", url);
+      window.prompt(t.common.copyThisCardLink, url);
     }
   }
 
   return (
     <button type="button" className="btn btn-ghost" onClick={onCopy}>
-      {copied ? "Copied!" : "Copy card link"}
+      {copied ? t.common.copied : t.common.copyCardLink}
     </button>
   );
 }
